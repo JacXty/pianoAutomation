@@ -9,5 +9,5 @@ public class PianoUI {
     // El método .locatedBy() acepta una cadena de selector que puede contener {0} para sustitución.
     public static final Target TECLA_NOTA_GENERICA =
             Target.the("la tecla de piano con data-note {0}")
-                    .locatedBy(".white-key[data-note='{0}']");
+                    .locatedBy(".key[data-note='{0}']");
 }

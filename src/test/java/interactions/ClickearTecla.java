@@ -7,6 +7,9 @@ import net.serenitybdd.core.steps.Instrumented;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import net.serenitybdd.core.Serenity; // Necesitas esto para obtener el WebDriver
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import java.time.Duration;
 
 public class ClickearTecla implements Interaction {
 
@@ -20,6 +23,9 @@ public class ClickearTecla implements Interaction {
     public <T extends Actor> void performAs(T actor) {
         // Obtener la instancia del WebDriver actual
         WebDriver driver = Serenity.getWebdriverManager().getCurrentDriver();
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10)); // Wait for up to 10 seconds
+        wait.until(ExpectedConditions.elementToBeClickable(target.resolveFor(actor)));
 
         // 1. Encontrar el elemento usando el Target
         // Usamos resolveFor(actor) para obtener un WebElementFacade
@@ -42,4 +48,4 @@ public class ClickearTecla implements Interaction {
     public static ClickearTecla en(Target target) {
         return Instrumented.instanceOf(ClickearTecla.class).withProperties(target);
     }
-}
+}   
