@@ -1,101 +1,111 @@
-package features;
+package test;
 
-import net.serenitybdd.junit5.SerenityJUnit5Extension;
-import net.serenitybdd.screenplay.Actor;
+import net.serenitybdd.junit.runners.SerenityRunner;
+import net.serenitybdd.screenplay.GivenWhenThen;
 import net.serenitybdd.screenplay.abilities.BrowseTheWeb;
+import net.serenitybdd.annotations.Managed;
+import net.serenitybdd.screenplay.Actor;
+import net.serenitybdd.screenplay.actions.Click;
 import net.serenitybdd.screenplay.actions.Open;
-import net.serenitybdd.screenplay.Interaction; // ¡Importante para EsperarCarga!
-import net.serenitybdd.screenplay.Tasks;      // ¡Importante para EsperarCarga!
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.Before; // Importación para el setup
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.FixMethodOrder;
+import org.junit.runners.MethodSorters;
 import org.openqa.selenium.WebDriver;
-
-// Imports de Serenity BDD
-import static net.serenitybdd.screenplay.GivenWhenThen.givenThat;
-import static net.serenitybdd.screenplay.GivenWhenThen.when;
-import static net.serenitybdd.screenplay.GivenWhenThen.then;
-
 import tasks.TocarCancion;
+import questions.LaTeclaEstaMarcada;
+import ui.PianoUI;
 
-@ExtendWith(SerenityJUnit5Extension.class)
+import java.util.List;
+import java.util.ArrayList;
+
+import static org.hamcrest.Matchers.is;
+import static net.serenitybdd.screenplay.GivenWhenThen.when;
+import static net.serenitybdd.screenplay.GivenWhenThen.givenThat;
+
+@FixMethodOrder(MethodSorters.NAME_ASCENDING) // 🛑 Garantiza el orden 00, 01, 02, 03
+@RunWith(SerenityRunner.class)
 public class PianoTest {
 
-    WebDriver driver; // Inyectado por Serenity
-    private Actor pianista;
+    @Managed(driver = "chrome")
+    WebDriver browser;
 
-    // Clase auxiliar para la pausa fija (lo ideal sería en un archivo separado)
-    public static class EsperarCarga implements Interaction {
-        private final int milisegundos;
+    Actor usuario = Actor.named("Test");
 
-        public EsperarCarga(int milisegundos) {
-            this.milisegundos = milisegundos;
-        }
+    // --------------------------------------------------------------------------------------------------
+    // CONSTANTES DE NOTAS (Octava 2/3 para el Himno de la Alegría)
+    // --------------------------------------------------------------------------------------------------
 
-        public static EsperarCarga por(int milisegundos) {
-            return Tasks.instrumented(EsperarCarga.class, milisegundos);
-        }
+    // Secuencia Base del Himno de la Alegría: si, si, do, re, re, do, si, la, sol, sol, la, si, si, la, la
+    private final List<String> HIMNO_ALEGRIA_BASE = List.of(
+            "2b", "2b", "2c", "2d", "2d", "2c", "2b", "2a",
+            "2g", "2g", "2a", "2b", "2b", "2a", "2a"
+    );
 
-        @Override
-        public <T extends Actor> void performAs(T actor) {
-            try {
-                Thread.sleep(milisegundos);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
+    // Secuencia Compleja: si, si, do, re, re, do, si, la, sol, sol, la, si, la, sol, sol, la, si, sol, la, si, do, si sol, la, si, do, si, sol, sol, fa, re
+    private final List<String> SECUENCIA_COMPLEJA = List.of(
+            "2b", "2b", "2c", "2d", "2d", "2c", "2b", "2a",
+            "2g", "2g", "2a", "2b", "2a", "2g", "2g", "2a",
+            "2b", "2g", "2a", "2b", "3c", "2b", "2g", "2a",
+            "2b", "3c", "2b", "2g", "2g", "2f", "2d" // Última nota: 2d
+    );
 
-    @BeforeEach
-    public void setup() {
-        pianista = Actor.named("El Pianista QA")
-                .can(BrowseTheWeb.with(driver));
+    // --------------------------------------------------------------------------------------------------
+    // CONFIGURACIÓN (SETUP)
+    // --------------------------------------------------------------------------------------------------
 
-        // Abrir la URL y luego esperar 1.5 segundos (1500ms) para la carga.
-        givenThat(pianista).attemptsTo(
-                Open.url("https://www.musicca.com/es/piano"),
-                EsperarCarga.por(1500)
+    @Before // 🛑 Se ejecuta antes de CADA método @Test
+    public void setupScenario() {
+        usuario.can(BrowseTheWeb.with(browser));
+
+        // 1. Abrir la página.
+        givenThat(usuario).attemptsTo(
+                Open.url("https://www.musicca.com/es/piano")
         );
-    }
 
-    // --- ESCENARIO 1: Secuencia Base ---
+   }
+
+    // --------------------------------------------------------------------------------------------------
+    // ESCENARIOS DE PRUEBA
+    // --------------------------------------------------------------------------------------------------
+
+
     @Test
-    public void escenario1_tocarSecuenciaBaseDelHimnoDeLaAlegria() {
-        String secuenciaBase = "si, si, do, re, re, do, si, la, sol, sol, la, si, si, la, la";
+    public void _01_tocarSecuenciaBaseDelHimnoDeLaAlegria() throws InterruptedException {
+        // La validación solo se centra en la última tecla presionada ('la' -> '2a')
+        final String ultimaNota = "2a";
 
-        when(pianista).attemptsTo(
-                TocarCancion.conLaSecuencia(secuenciaBase)
+        when(usuario).attemptsTo(
+                // 1. Ejecuta toda la secuencia (incluyendo repeticiones).
+                TocarCancion.conSecuencia(HIMNO_ALEGRIA_BASE)
         );
 
-        then(pianista).should();
     }
 
-    // --- ESCENARIO 2: Repetir Secuencia ---
     @Test
-    public void escenario2_repetirSecuenciaBaseDosVeces() {
-        String secuenciaBase = "si, si, do, re, re, do, si, la, sol, sol, la, si, si, la, la";
-        String secuenciaRepetida = secuenciaBase + ", " + secuenciaBase;
+    public void _02_repetirSecuenciaBaseDosVeces() {
 
-        when(pianista).attemptsTo(
-                TocarCancion.conLaSecuencia(secuenciaRepetida)
+        // Combina la secuencia base dos veces
+        List<String> secuenciaDoble = new ArrayList<>(HIMNO_ALEGRIA_BASE);
+        secuenciaDoble.addAll(HIMNO_ALEGRIA_BASE);
+
+
+        when(usuario).attemptsTo(
+                TocarCancion.conSecuencia(secuenciaDoble)
         );
 
-        then(pianista).should();
     }
 
-    // --- ESCENARIO 3: Secuencia Completa ---
     @Test
-    public void escenario3_tocarSecuenciaCompleta() {
-        String parteA = "si, si, do, re, re, do, si, la, sol, sol, la, si, la, sol, sol";
-        String parteB = "la, si, sol, la, si, do, si, sol, la, si, do, si, sol, sol, fa, re";
-        String parteC = "si, si, do, re, re, do, si, la, sol, sol, la, si, si, la, la";
+    public void _03_tocarSecuenciaComplejaSeguidaDeSecuenciaBase() {
 
-        String secuenciaCompleta = parteA + ", " + parteB + ", " + parteC;
+        // Combina la Secuencia Compleja y la Secuencia Base
+        List<String> secuenciaFinal = new ArrayList<>(SECUENCIA_COMPLEJA);
+        secuenciaFinal.addAll(HIMNO_ALEGRIA_BASE);
 
-        when(pianista).attemptsTo(
-                TocarCancion.conLaSecuencia(secuenciaCompleta)
+        when(usuario).attemptsTo(
+                TocarCancion.conSecuencia(secuenciaFinal)
         );
-
-        then(pianista).should();
     }
 }

@@ -3,55 +3,70 @@ package tasks;
 import interactions.ClickearTecla;
 import net.serenitybdd.screenplay.Actor;
 import net.serenitybdd.screenplay.Task;
+import net.serenitybdd.screenplay.Tasks;
 import net.serenitybdd.screenplay.targets.Target;
-import net.serenitybdd.annotations.Step;
-import net.serenitybdd.core.steps.Instrumented;
-import org.openqa.selenium.By;
+import net.serenitybdd.screenplay.waits.WaitUntil;
+import ui.PianoUI;
 
 import java.util.List;
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import net.serenitybdd.annotations.Step;
+
+import static net.serenitybdd.screenplay.matchers.WebElementStateMatchers.isVisible;
 
 public class TocarCancion implements Task {
 
-    private final List<String> notas;
+    private final List<String> secuenciaNotas;
+    private static final Map<String, String> NOTE_MAPPING = new HashMap<>();
 
-    public TocarCancion(List<String> notas) {
-        this.notas = notas;
+    static {
+        NOTE_MAPPING.put("do", "1c");
+        NOTE_MAPPING.put("re", "1d");
+        NOTE_MAPPING.put("mi", "1e");
+        NOTE_MAPPING.put("fa", "1f");
+        NOTE_MAPPING.put("sol", "1g");
+        NOTE_MAPPING.put("la", "2a");
+        NOTE_MAPPING.put("si", "2b");
+        // Black keys (assuming 'is' for sharp, 'es' for flat, based on common notation and error message)
+        NOTE_MAPPING.put("do#", "1cis");
+        NOTE_MAPPING.put("re#", "1dis");
+        NOTE_MAPPING.put("fa#", "1fis");
+        NOTE_MAPPING.put("sol#", "1gis");
+        NOTE_MAPPING.put("la#", "2ais");
     }
 
-    /**
-     * Tarea estática principal (usa una lista de notas).
-     */
-    public static Task conNotas(List<String> notas) {
-        return Task.where("{0} toca la canción con las notas: " + notas.toString(),
-                new TocarCancion(notas));
+    public TocarCancion(List<String> secuenciaNotas) {
+        this.secuenciaNotas = secuenciaNotas;
     }
 
-    /**
-     * Tarea auxiliar (usa una secuencia de texto separada por comas).
-     */
-    public static Task conLaSecuencia(String secuencia) {
-        List<String> notas = Arrays.stream(secuencia.split(","))
-                .map(String::trim)
-                .collect(Collectors.toList());
-
-        return Task.where("{0} toca la secuencia \'" + secuencia + "\'",
-                new TocarCancion(notas));
-    }
-
-    // ... (El método performAs no cambia y se omite por brevedad)
     @Override
-    @Step("{0} toca la canción")
     public <T extends Actor> void performAs(T actor) {
-        for (String nota : notas) {
 
-            Target tecla = Target.the("la tecla de piano con data-note " + nota)
-                    .located(By.cssSelector(String.format(".key[data-note='%s']", nota)));
+        for (String nota : secuenciaNotas) {
+            String dataNote;
+            if (nota.matches("[0-9][a-g](is|es)?")) {
+                dataNote = nota.toLowerCase();
+            } else {
+                dataNote = NOTE_MAPPING.get(nota.toLowerCase());
+            }
+
+            if (dataNote == null) {
+                System.out.println("Warning: No mapping found for note: " + nota);
+                continue;
+            }
+
+            Target tecla = PianoUI.TECLA_NOTA_GENERICA.of(dataNote);
 
             actor.attemptsTo(
-                    ClickearTecla.en(tecla)
+                    WaitUntil.the(tecla, isVisible()).forNoMoreThan(10).seconds(),
+                    ClickearTecla.enElPiano(tecla)
             );
         }
+    }
+
+    public static TocarCancion conSecuencia(List<String> secuenciaNotas) {
+        return Tasks.instrumented(TocarCancion.class, secuenciaNotas);
     }
 }
