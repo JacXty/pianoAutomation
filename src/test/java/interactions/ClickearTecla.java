@@ -2,44 +2,37 @@ package interactions;
 
 import net.serenitybdd.screenplay.Actor;
 import net.serenitybdd.screenplay.Interaction;
+import net.serenitybdd.screenplay.Tasks;
+import net.serenitybdd.screenplay.actions.Click;
 import net.serenitybdd.screenplay.targets.Target;
-import net.serenitybdd.core.steps.Instrumented;
-import org.openqa.selenium.JavascriptExecutor;
+import net.serenitybdd.screenplay.waits.WaitUntil;
 import org.openqa.selenium.WebDriver;
-import net.serenitybdd.core.Serenity; // Necesitas esto para obtener el WebDriver
+import org.openqa.selenium.interactions.Actions;
+import net.serenitybdd.screenplay.abilities.BrowseTheWeb;
+
+import static net.serenitybdd.screenplay.matchers.WebElementStateMatchers.isClickable;
+import static net.serenitybdd.screenplay.actions.Scroll.to;
 
 public class ClickearTecla implements Interaction {
 
-    private final Target target;
+    private final Target tecla;
 
-    public ClickearTecla(Target target) {
-        this.target = target;
+    public ClickearTecla(Target tecla) {
+        this.tecla = tecla;
     }
 
     @Override
     public <T extends Actor> void performAs(T actor) {
-        // Obtener la instancia del WebDriver actual
-        WebDriver driver = Serenity.getWebdriverManager().getCurrentDriver();
+        WebDriver driver = BrowseTheWeb.as(actor).getDriver();
 
-        // 1. Encontrar el elemento usando el Target
-        // Usamos resolveFor(actor) para obtener un WebElementFacade
-        // y luego getWrappedElement() para obtener el WebElement de Selenium puro
-        org.openqa.selenium.WebElement elemento = target.resolveFor(actor).getWrappedElement();
-
-        // 2. Ejecutar el clic por JavaScript
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("arguments[0].click();", elemento);
-
-        // Opcional: Agregar una pequeña espera después del clic
-        // para asegurarte de que el sonido se registra si es necesario.
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        actor.attemptsTo(
+                WaitUntil.the(tecla, isClickable()).forNoMoreThan(30).seconds(),
+                to(tecla)
+        );
+        new Actions(driver).moveToElement(tecla.resolveFor(actor)).click().build().perform();
     }
 
-    public static ClickearTecla en(Target target) {
-        return Instrumented.instanceOf(ClickearTecla.class).withProperties(target);
+    public static ClickearTecla enElPiano(Target tecla) {
+        return Tasks.instrumented(ClickearTecla.class, tecla);
     }
 }
