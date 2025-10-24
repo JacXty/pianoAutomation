@@ -46,10 +46,18 @@ Para ejecutar el proyecto localmente, necesitas tener instalado:
 ---
 
 ## 🚀 Guía de Ejecución
+### 1. Inicialización del Proyecto (Primera Vez) ⬇️
 
-### 1. Comando de Ejecución Estándar y Reporte
+Este comando es necesario para descargar **todas las librerías** de Maven Central, compilar el proyecto y prepararlo para la ejecución.
 
-Este es el comando principal para ejecutar todos los escenarios de prueba y, automáticamente, generar el informe de Serenity BDD. **Abrirá el navegador** durante la ejecución.
+```bash 
+mvn clean install        
+```
+
+### 2. Comando de Ejecución Estándar y Reporte (Si ya se ejecutó el comando anterior)📊
+
+Este es el comando ayuda  para ejecutar todos los escenarios de prueba y, automáticamente, generar el informe de Serenity BDD. **Abrirá el navegador** durante la ejecución.
 
 ```bash
 mvn clean verify
+```
